@@ -1,0 +1,176 @@
+---
+title: "Cap 1 - ggplot2"
+author: "Paola Freitas"
+date: "26/08/2021"
+output: pdf_document
+---
+#Ajustes iniciais:
+Antes de tudo, iremos carregar pacotes necessários.
+
+```{r, message = F}
+install.packages("tidyverse")
+library(tidyverse)
+library(ggplot2)
+?ggplot2
+```
+
+#Conceitos básicos
+O ggplot2 implementa a gramática dos gráficos, um sistema coerente e versátil para descrever e construir gráficos. Ele é um dos membros centrais do "tidyverse". O gráfico com o ggplot vai sendo formado se adicionando uma ou mais camadas à função.
+Um data frame é uma coleção retangular de variáveis (nas colunas) e observações (nas linhas). 
+Iremos usar o data frame mpg (ggplot2::mpg) que contém observações coletadas pela Agencia de Proteção Ambiental dos Estados Unidos sobre 3 modelos de carros. Para mais informações a respeito deste dataframe é só usar o comando "?".
+Para plotarmos um gráfico com o eixo x sendo displ (tamanho do motor de um carro em litro) e y sendo hwl (eficiencia do combustivel em um carro (milhas/galão) como um gráfico de pontos, escrevemos assim:
+
+```{r, fig.width = 6, fig.height = 6, fig.align = "center"}
+?mpg
+?geom_point
+View(ggplot2::mpg) #visualizando o dataframe
+ggplot(data=mpg) + geom_point(mapping=aes(x=displ,y=hwy))
+```
+
+A função "geom_point()" adiciona uma camada de pontos, criando um gráfico de dispersão. Cada função "geom" recebe um argumento "mapping=aes()" que define como as variáveis do conjunto são mapeadas para as propriedades virtuais. 
+Template: ggplot(data=<DATA>) + <GEOM_FUNCTION>(mapping=aes(<MAPPINGS>))
+
+##Adicionando uma terceira camada 
+Vamos adicionar essa terceira variável ao gráfico de dispersão. Para isso a gente vai mudar a estética do gráfico, o termo utilizado ´"nível". Niveis podem ser do tamanho, da forma e da cor de um ponto, por exemplo. O ggplot 2 atribuirá automaticamente um nivel singular de estética para cada valor singular de variável: processo chamado"scaling".
+
+```{r, fig.width = 6, fig.height = 6, fig.align = "center"}
+ggplot(data=mpg) + geom_point(mapping=aes(x=displ,y=hwy,color=class)) #dentro de aes automaticamente a cor é determinada a um valor de uma variável
+  ggplot(data=mpg) + geom_point(mapping=aes(x=displ,y=hwy),color="blue") #todos os pontos são afetados
+```
+
+
+#Facetas
+É divisão do gráfico em subgráficos que exibem um subconjunto de dados. É particularmente útil para variáveis categóricas. A função usada para isso é "facet_wrap". O primeiro argumento é uma fórmula que você cria com um tio (não, não é pedir ajuda a seu tio, é o símbolo ~) seguido de uma variável discreta. Para criar facetas a partir de uma combinação de duas variáveis o código é "facet_grid". Desta vez a fórmula deve ter dois nomes de variáveis separados por um ~ . Se não quiser usar facetas no lugar das linhas ou das colunas use um ponto no lugar de uma variável, por exemplo aqui (.~cyl):
+
+```{r, fig.width = 6, fig.height = 6, fig.align = "center"}
+?facet_wrap
+ggplot(data=mpg) + geom_point(mapping=aes(x=displ,y=hwy)) + facet_wrap(~class, nrow=2)
+
+?facet_grid
+ggplot(data=mpg) + geom_point(mapping=aes(x=displ,y=hwy)) + facet_grid(.~cty)
+```
+
+
+#Objetos Geométricos
+Dizer que gráficos usam geoms diferentes quer dizer que cada gráfico usa um objeto visual/geométrico diferente para representar os dados. Por exemplo: gráficos de barra usam geoms de barra, e por ai vai. Só no ggplot2 existem mais de 30 geoms, e é possível baixar extensões. É importante notar que nem toda estética funciona com todo geom. É possiível configurar a forma, o estilo, de um ponto mas não de uma linha. Para alterar a linha é possível usar o argumento linetype para que o R gere tipos de linha diferente para cada valor singular da variável mapeada.  Para mudar o geom do seu gráfico, faça assim:
+
+```{r, fig.width = 6, fig.height = 6, fig.align = "center"}
+x<-ggplot(data=mpg) + geom_point(mapping=aes(x=displ,y=hwy))
+
+?geom_smooth
+?linetype
+ggplot(data=mpg) + geom_smooth(mapping=aes(x=displ,y=hwy, linetype=class),show.legend=FALSE)
+```
+ 
+Para exibir vários geoms no mesmo gráfico é só adicionar várias funções geom ao ggplot(), só não pode esquecer de usar o + entre as funções geom. Para simplificar a escrita, bata passar o argumento mapping para dentro do ggplot com os argumentos x e y, e nas funções geom a estética. Podemos também usar a função "filter" para especificar um conjunto de dados diferente para cada camada. O "se" dentro de filter significa standard error, ele mostra o intervalo de confiança por default.  Por exemplo:
+
+```{r, fig.width = 6, fig.height = 6, fig.align = "center"}
+ggplot(data=mpg, mapping=aes(x=displ,y=hwy)) + geom_smooth() + geom_point(mapping=aes(color=class)) #o geom_smooth não precisa de argumentos
+ggplot(data=mpg, mapping=aes(x=displ,y=hwy)) + geom_smooth(data=filter(mpg,class=="subcompact"),se=FALSE) + geom_point(mapping=aes(color=class))
+ggplot(data=mpg, mapping=aes(x=displ,y=hwy)) + geom_line(se=FALSE) + geom_point(mapping=aes(color=class))
+```
+
+
+#Objetos Geométricos
+Agora nós vamos usar um outro dataframe, sobre diamantes. Muitos gráficos, como os de dispersão, plotam os valores brutos de seu conjunto de dados. Outros gráficos, como os de barra (histogramas, polígonos de frequência), calculam novos valores para usar, como por exemplo as contagens de armazenamento. O algortimo usado para calcular novos valores é chamado de "stat", abreviação de estatistica. O gráfico de barras gerado a seguir transformou os dados com a estatística "count". Usando o "?" no tipo de geom é possível ver qual é o valor padrão de stat que ele usa. Em "computed variables" ele mostra quais outras variáveis ele calcula. Olhe esse gráfico de barras:
+
+```{r, fig.width = 6, fig.height = 6, fig.align = "center"}
+ggplot(data=diamonds) + geom_bar(mapping = aes(x=cut)) #eixo y calculado por stat
+ggplot(data=diamonds) + stat_cout(mapping = aes(x=cut)) #deu o mesmo gráfico, pois esse stat tem o geom_bar como padrão, e vice versa
+ggplot(data=diamonds) + geom_col(mapping = aes(x=cut,y=price)) #esse é um gráfico de colunas, por ex, nele é obrigado a informação do y, não é gerado automaticamente
+```
+
+Para mudar o stat padrão de um gráfico, fazemos como abaixo. Aqui mudamos o stat de count para identity. Isso permite mapear o peso das barras dos valor brutos de uma variável y. Para chamar mais atenção a transformações estatísticas, podemos usar stat_summary, que resume os valor de y para cada valor individual de x:
+
+```{r, fig.width = 6, fig.height = 6, fig.align = "center"}
+demo<- tribble(
+~a, ~b,
+"bar_1", 20,
+"bar_2", 30,
+"bar_3", 40
+)
+ggplot(data=demo) + geom_bar(mapping = aes(x=a,y=b), stat="identity") 
+
+?stat_summary
+ggplot(data=diamonds) + stat_summary(mapping= aes(x=cut,y=depth), fun.min=min,fun.max=max,fun=median)
+```
+
+
+#Ajustes de posição
+Vamos colorir os gráficos. É possível fazer isso usando a estética "color" ou "fill". Aqui cada retângulo colorido representa uma combinação de cut e clarity. Esse empilhamento é realizado automaticamente pelo ajuste de posição especificado no argumento "position".
+
+```{r setup, include=FALSE}
+ggplot(data=diamonds) + geom_bar(mapping= aes(x=cut,color=cut)) #ão representativo
+ggplot(data=diamonds) + geom_bar(mapping= aes(x=cut,fill=cut)) + coord_flip()
+ggplot(data=diamonds) + geom_bar(mapping= aes(x=cut,fill=clarity)) + coord_flip()
+```
+
+Existem 3 opções:
+Position = identity; 
+É mais util para geoms 2D. Ele coloca os objetos exatamente onde ele cai no contexto do gráfico, o que não é muito bom pra barras porque elas são sobrepostas, elas precisam ser configuradas para ter um certo nivel de transparência (#1) ou completamente transparentes (#2). 
+
+```{r setup, include=FALSE}
+ggplot(data=diamonds, mapping=aes(x=cut,fill=clarity)) + geom_bar(alpha=1/5,position="identity") #1
+ggplot(data=diamonds, mapping=aes(x=cut,color=clarity)) + geom_bar(alpha=NA,position="identity") #2
+```
+
+Position = fill;
+Funciona como empilhamento, mas torna cada grupo de barras empilhadas da mesma altura. Isso facilita comparar proporções entre grupos:
+
+```{r setup, include=FALSE}
+ggplot(data=diamonds) + geom_bar(mapping=aes(x=cut,fill=clarity),position="fill")
+```
+
+Position = dodge;
+Coloca objetos sobrepostos diretamente um ao lado do outro. Isso facilita a comparação de valores individuais:
+
+```{r setup, include=FALSE}
+ggplot(data=diamonds) + geom_bar(mapping=aes(x=cut,fill=clarity),position="dodge")
+```
+
+Usando um outro tipo de posição, só que boa para gráficos de dispersão. A "jitters" adiciona uma pequena quantidade de ruído aleatório a cada ponto. Isso espalha os pontos porque não é provavel que dois pontos quaisquer recebam a mesma quantidade de ruído aleatório.Vamos testar no primiero dataframe que usamos, mpg:
+
+```{r setup, include=FALSE}
+ggplot(data=mpg) + geom_point(mapping=aes(x=displ,y=hwy),position="jitter") #ou
+ggplot(data=mpg) + geom_jitter(mapping=aes(x=displ,y=hwy)) #o que mudou?
+```
+
+
+#Sistemas de coordenadas
+O sistema padrão é o cartesiano, no qual as posições x e y agem independentemente para encontrar a localização de cada ponto. Abaixo temos algumas funções úteis. 
+-coord_flip: troca os eixos x e y, util para graficos longos e para diagrama de caixas horizontais por exemplo.
+-coord_quickmap: configura a proporção de tela corretamente. 
+-coord_polar: usa coordenadas polates, que revelam uma conexão interessante entre um gráfico de barra e um gráfico de setores.
+-coord_fixed
+
+```{r setup, include=FALSE}
+ggplot(data=mpg,mapping=aes(x=class,y=hwy)) + geom_boxplot()
+ggplot(data=mpg,mapping=aes(x=class,y=hwy)) + geom_boxplot() + coord_flip()
+
+nz<-map_data("nz")
+ggplot(nz,aes(long,lat,group=group)) + geom_polygon(fill="white",color="black")
+ggplot(nz,aes(long,lat,group=group)) + geom_polygon(fill="white",color="black") + coord_quickmap()
+
+install.packages("mapproj")
+library(mapproj)
+??mapproj
+ggplot(nz,aes(long,lat,group=group)) + geom_polygon(fill="white",color="black") + coord_map()
+
+?labs #Modifica os eixos, legenda, e legendas do plot
+bar<-ggplot(data=diamonds) + geom_bar(mapping=aes(x=cut,fill=cut),show.legend=FALSE,width=1) + theme(aspect.ratio=1) + labs(x=NULL,y=NULL)
+bar + coord_flip()
+bar + coord_polar
+
+?coord_fixed #fixa razão de aspecto do seu gráfico
+?geom_abline #linhas de referência
+ggplot(data=mpg,mapping=aes(x=cty,y=hwy)) + geom_point() + geom_abline() + coord_fixed()
+```
+
+
+#O que vimos?
+- Mapeamento estético
+- Facetas
+- Objetos Geométricos
+- Transformações Estatísticas
+- Ajustes de Posição
+- Sistemas de Coordenadas
